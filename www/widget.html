@@ -1,48 +1,37 @@
 <html>
+
 <head>
-    <link href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet"
-          id="bootstrap-css">
+    <link href="http://files.modmuss50.me/files/simple-grid.min.css" rel="stylesheet">
 
     <style>
-        body {
-            padding: 0px;
-        }
-
-        small {
-            display: block;
-            line-height: 1.4;
-            color: #999;
-        }
-
-        .container-full {
-            margin: 0 auto;
-            width: 100%;
+        * {
+            margin-top: 0px;
+            margin-bottom: 0px;
         }
     </style>
 </head>
 
 <body>
-<div class="container-full">
-    <div class="row">
-        <div class="col-xs-12 col-sm-6 col-md-6">
-            <div class="well well-sm">
-                <div class="row">
-                    <div class="col-sm-6 col-md-4">
-                        <img src="{{.Thumbnail}}" alt="" class="img-rounded img-responsive"/>
-                    </div>
-                    <div class="col-sm-6 col-md-8">
-                        <h4>{{.Name}}</h4>
-                        <small><cite>{{.DownloadCountPretty}} Downloads</cite></small>
-                        <p>
-                        {{.Summary}}
-                        </p>
-                        <a class="btn btn-default" href="{{.WebSiteURL}}" role="button">Download</a>
-                    </div>
-                </div>
+    <div class="container" style="margin-left: 0px">
+        <div class="row">
+
+            <div class="col-3-sm">
+                <img src="{{.Thumbnail}}" alt="" style="width:140px;height:140px" />
             </div>
+
+            <div class="col-8-sm">
+                <h4>{{.Name}}</h4>
+                <small>
+                    <cite>{{.DownloadCountPretty}} Downloads</cite>
+                </small>
+                <p>
+                    {{.Summary}}
+                </p>
+                <a href="{{.WebSiteURL}}" role="button">Download</a>
+            </div>
+
         </div>
     </div>
-</div>
 </body>
 
 

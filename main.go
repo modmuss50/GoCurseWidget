@@ -23,18 +23,19 @@ func main() {
 	Cache = cache.New(30*time.Minute, 1*time.Minute)
 
 	http.HandleFunc("/widget/", widgetResponse)
-	http.ListenAndServe(":8000", nil)
+	http.ListenAndServe(":8888", nil)
 }
 
 func widgetResponse(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.URL)
 	tmpl, err := template.ParseFiles("www/widget.html")
 	if err != nil {
-		io.WriteString(w, "An error occurred")
+		io.WriteString(w, "An error occurred when reading template")
 		return
 	}
 	regex, err := regexp.Compile("[^/]+$")
 	if err != nil {
-		io.WriteString(w, "An error occurred")
+		io.WriteString(w, "An error occurred finding project id")
 		return
 	}
 	projectID := string(regex.Find([]byte(r.URL.String())))
@@ -80,6 +81,10 @@ func getProjectData(projectID string) (*ProjectData, error) {
 	}
 	addonData.DownloadCountPretty = humanize.Comma(int64(addonData.DownloadCount))
 
+	//Trim the addon summary
+	if len(addonData.Summary) > 130 {
+		addonData.Summary = addonData.Summary[0:130] + "..."
+	}
 
 	return addonData, nil
 }
