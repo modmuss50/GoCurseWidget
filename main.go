@@ -11,6 +11,7 @@ import (
 	"github.com/patrickmn/go-cache"
 	"time"
 	"fmt"
+	"errors"
 )
 
 var (
@@ -68,7 +69,9 @@ func getProjectData(projectID string) (*ProjectData, error) {
 	if err := json.Unmarshal(addonBytes, &addonData); err != nil {
 		return nil, err
 	}
-
+	if addonData == nil {
+		return nil, errors.New("failed to load curse addondata")
+	}
 	//Populate the extra fields I added to make things easier for the template
 	for _, attachment := range addonData.Attachments {
 		if attachment.IsDefault {
