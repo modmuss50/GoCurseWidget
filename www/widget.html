@@ -1,14 +1,34 @@
 <html>
 
 <head>
-    <link href="http://files.modmuss50.me/files/simple-grid.min.css" rel="stylesheet">
+    <link href="https://files.modmuss50.me/files/simple-grid.min.css" rel="stylesheet">
 
     <style>
         * {
             margin-top: 0px;
             margin-bottom: 0px;
         }
+
+        .textBlock {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
     </style>
+
+    <script>
+        var downloads = {{.DownloadCount}};
+        window.setInterval(
+                function () {
+                    downloads = downloads + {{.DownloadsPerSecond}};
+                    document.getElementById("downloads").innerHTML = numberWithCommas(Math.round(downloads)) + " Downloads";
+
+                }, 1000);
+
+        const numberWithCommas = (x) => {
+            return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+    </script>
 </head>
 
 <body>
@@ -22,9 +42,9 @@
             <div class="col-8-sm">
                 <h4>{{.Name}}</h4>
                 <small>
-                    <cite>{{.DownloadCountPretty}} Downloads</cite>
+                    <cite id="downloads">{{.DownloadCountPretty}} Downloads</cite>
                 </small>
-                <p>
+                <p class="textBlock">
                     {{.Summary}}
                 </p>
                 <a href="{{.WebSiteURL}}" role="button">Download</a>

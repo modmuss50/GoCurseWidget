@@ -12,15 +12,19 @@ import (
 	"time"
 	"fmt"
 	"errors"
+	"strconv"
 )
 
 var (
-	Cache *cache.Cache
+	Cache        *cache.Cache
+	HistoryCache *cache.Cache
 )
 
 func main() {
 	//Creates a 30 min cache, cleans up every 1 min
 	Cache = cache.New(30*time.Minute, 1*time.Minute)
+	//Creates a 24 hour cache, cleans every 30 mins
+	HistoryCache = cache.New(24*time.Hour, 30*time.Minute)
 
 	http.HandleFunc("/widget/", widgetResponse)
 	http.ListenAndServe(":8888", nil)
@@ -81,19 +85,50 @@ func getProjectData(projectID string) (*ProjectData, error) {
 	}
 	addonData.DownloadCountPretty = humanize.Comma(int64(addonData.DownloadCount))
 
-	//Trim the addon summary
-	if len(addonData.Summary) > 130 {
-		addonData.Summary = addonData.Summary[0:130] + "..."
+	monthlyDownloads, err := getMonthlyDownloads(strconv.Itoa(addonData.ID), addonData.GameID)
+
+	if err == nil {
+		addonData.DownloadsPerSecond = monthlyDownloads / (30 * 24 * 60 * 60)
+	} else {
+		//No need to fail if this fails
+		fmt.Println("Failed to get download history for " + projectID)
+		fmt.Println(err)
+		addonData.DownloadsPerSecond = 0
 	}
 
 	return addonData, nil
+}
+
+func getMonthlyDownloads(projectID string, gameID int) (float64, error) {
+	var historyData map[string]float64
+	if x, found := HistoryCache.Get(strconv.Itoa(gameID)); found {
+		historyData = x.(map[string]float64)
+	} else {
+		fmt.Println("Downloading game history")
+		historyBytes, err := goutils.Download("https://cursemeta.dries007.net/api/v2/history/downloads/" + strconv.Itoa(gameID) + "/monthly")
+		if err != nil {
+			fmt.Println(err)
+			return 0, err
+		}
+		fmt.Println("Reading game history")
+		var downloadMap = make(map[string]float64)
+		err = json.Unmarshal(historyBytes, &downloadMap)
+		if err != nil {
+			fmt.Println(err)
+			return 0, err
+		}
+		HistoryCache.Set(strconv.Itoa(gameID), downloadMap, cache.DefaultExpiration)
+		historyData = downloadMap
+	}
+	fmt.Println(historyData[projectID])
+	return historyData[projectID], nil
 }
 
 //Made with https://mholt.github.io/json-to-go/
 type ProjectData struct {
 	Thumbnail           string //Not in json, moved here to make things easier
 	DownloadCountPretty string //This is a nice looking download count
-
+	DownloadsPerSecond  float64
 
 	Attachments []struct {
 		Description  interface{} `json:"Description"`
