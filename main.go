@@ -26,8 +26,20 @@ func main() {
 	//Creates a 24 hour cache, cleans every 30 mins
 	HistoryCache = cache.New(24*time.Hour, 30*time.Minute)
 
+	fmt.Println("Starting at http://localhost:8888")
+
+	http.HandleFunc("/", index)
 	http.HandleFunc("/widget/", widgetResponse)
 	http.ListenAndServe(":8888", nil)
+}
+
+func index(w http.ResponseWriter, r *http.Request){
+	tmpl, err := template.ParseFiles("www/index.html")
+	if err != nil {
+		io.WriteString(w, "An error occurred when reading template")
+		return
+	}
+	tmpl.Execute(w, nil)
 }
 
 func widgetResponse(w http.ResponseWriter, r *http.Request) {
@@ -62,6 +74,16 @@ func widgetResponse(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Using cached projectID")
 	}
 
+	projectData.(*ProjectData).SimulateDownloadCount = true
+
+	simulateDownloadCountParam := r.URL.Query().Get("simulateDownloadCount")
+	if simulateDownloadCountParam != "" {
+		simBool, err := strconv.ParseBool(simulateDownloadCountParam)
+		if err == nil {
+			projectData.(*ProjectData).SimulateDownloadCount = simBool
+		}
+	}
+
 	tmpl.Execute(w, projectData)
 }
 
@@ -87,7 +109,7 @@ func getProjectData(projectID string) (*ProjectData, error) {
 
 	monthlyDownloads, err := getMonthlyDownloads(strconv.Itoa(addonData.ID), addonData.GameID)
 
-	if err == nil {
+	if err == nil && monthlyDownloads > 0 {
 		addonData.DownloadsPerSecond = monthlyDownloads / (30 * 24 * 60 * 60)
 	} else {
 		//No need to fail if this fails
@@ -129,6 +151,7 @@ type ProjectData struct {
 	Thumbnail           string //Not in json, moved here to make things easier
 	DownloadCountPretty string //This is a nice looking download count
 	DownloadsPerSecond  float64
+	SimulateDownloadCount bool
 
 	Attachments []struct {
 		Description  interface{} `json:"Description"`

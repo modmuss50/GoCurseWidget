@@ -1,0 +1,94 @@
+<html>
+
+<head>
+    <link href="https://files.modmuss50.me/files/simple-grid.min.css" rel="stylesheet">
+        <style>
+        .center {
+            text-align: center;
+        }
+
+        .vertCenter {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            left: 50%;
+        }
+
+        ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #333;
+            white-space:nowrap;
+            display:inline-block;
+        }
+
+        ul li {
+            white-space:nowrap;
+        }
+
+        li {
+            float: left;
+        }
+
+        li a {
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+        }
+
+        li a:hover {
+            background-color: #111;
+        }
+
+        pre code {
+            background-color: #eee;
+            border: 1px solid #999;
+            display: block;
+            padding: 20px;
+            white-space: pre-wrap;
+        }
+
+    </style>
+
+</head>
+
+<body>
+<div class="container" style="margin-left: 0px">
+    <div class="row">
+        <div class="col-4">
+            <h1 class="center">Curse Widget Docs</h1>
+
+        </div>
+        <div class="col-8">
+            <div class="center vertCenter">
+                <ul>
+                    <li><a href="https://discord.gg/teamreborn">Discord</a></li>
+                    <li><a href="https://github.com/modmuss50/GoCurseWidget">Github</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-4">
+            <h3>/widget/~projectID~</h3>
+            <a href="/widget/233564">Example</a>
+        </div>
+        <div class="col-8">
+            <iframe src="/widget/233564" width="800" height="150" scrolling="no" seamless="seamless" style="border: none;"></iframe>
+            <p>The best way to the use widget is to use an iframe to embed it onto your site.</p>
+            <pre><code>&lt;iframe src=&quot;http://curse.modmuss50.me/widget/233564&quot; width=&quot;800&quot; height=&quot;150&quot; scrolling=&quot;no&quot; seamless=&quot;seamless&quot; style=&quot;border: none;&quot;&gt;&lt;/iframe&gt;</code></pre>
+            <p>Remember that the first time a project is requested it will take slightly longer to load while the data is retrieved from <a href="https://cursemeta.dries007.net/">CurseMeta</a>. Project data is cached for 30 mins.</p>
+            <p>The downloader counter will count up, simulating a live download counter. This is NOT a live download counter, but is based on the last 30 days of downloads on the project and then averaged out. This can be disabled by appending the following to the url.</p>
+            <pre><code>?simulateDownloadCount=false</code></pre>
+            <p>If you have any ideas for this site please let me know, as there is quite a lot of other things that could be added to this. The design of the widget does need changing, this will happen soon.</p>
+        </div>
+    </div>
+</div>
+</body>
+
+
+</html>
