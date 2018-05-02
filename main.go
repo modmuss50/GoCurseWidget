@@ -13,11 +13,14 @@ import (
 	"fmt"
 	"errors"
 	"strconv"
+	"github.com/paulbellamy/ratecounter"
 )
 
 var (
 	Cache        *cache.Cache
 	HistoryCache *cache.Cache
+	RateCounter *ratecounter.RateCounter
+	LastResponse string
 )
 
 func main() {
@@ -25,6 +28,10 @@ func main() {
 	Cache = cache.New(30*time.Minute, 1*time.Minute)
 	//Creates a 24 hour cache, cleans every 30 mins
 	HistoryCache = cache.New(24*time.Hour, 30*time.Minute)
+	//Creates a rate counted used to show counts per hour
+	RateCounter = ratecounter.NewRateCounter(1 * time.Hour)
+	//Stores the last response time
+	LastResponse = "0"
 
 	fmt.Println("Starting at http://localhost:8888")
 
@@ -39,10 +46,12 @@ func index(w http.ResponseWriter, r *http.Request){
 		io.WriteString(w, "An error occurred when reading template")
 		return
 	}
-	tmpl.Execute(w, nil)
+	tmpl.Execute(w, ServerInfo{RequestsPerHour:strconv.FormatInt(RateCounter.Rate(), 10), ResponseTime:LastResponse})
 }
 
 func widgetResponse(w http.ResponseWriter, r *http.Request) {
+	startTime := time.Now()
+	RateCounter.Incr(1)
 	fmt.Println(r.URL)
 	tmpl, err := template.ParseFiles("www/widget.html")
 	if err != nil {
@@ -70,8 +79,6 @@ func widgetResponse(w http.ResponseWriter, r *http.Request) {
 		}
 		Cache.Set(projectID, project, cache.DefaultExpiration)
 		projectData = project
-	} else {
-		fmt.Println("Using cached projectID")
 	}
 
 	projectData.(*ProjectData).SimulateDownloadCount = true
@@ -85,6 +92,7 @@ func widgetResponse(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl.Execute(w, projectData)
+	LastResponse = time.Since(startTime).String()
 }
 
 func getProjectData(projectID string) (*ProjectData, error) {
@@ -144,6 +152,11 @@ func getMonthlyDownloads(projectID string, gameID int) (float64, error) {
 	}
 	fmt.Println(historyData[projectID])
 	return historyData[projectID], nil
+}
+
+type ServerInfo struct {
+	RequestsPerHour string
+	ResponseTime string
 }
 
 //Made with https://mholt.github.io/json-to-go/
