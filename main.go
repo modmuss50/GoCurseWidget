@@ -14,6 +14,8 @@ import (
 	"errors"
 	"strconv"
 	"github.com/paulbellamy/ratecounter"
+	"log"
+	"os"
 )
 
 var (
@@ -33,17 +35,22 @@ func main() {
 	//Stores the last response time
 	LastResponse = "0"
 
+	//Sets up the logger
+	openLogFile("gocurse.log")
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
 	fmt.Println("Starting at http://localhost:8888")
 
 	http.HandleFunc("/", index)
 	http.HandleFunc("/widget/", widgetResponse)
-	http.ListenAndServe(":8888", nil)
+	http.ListenAndServe(":8888", logRequest(http.DefaultServeMux))
 }
 
 func index(w http.ResponseWriter, r *http.Request){
 	tmpl, err := template.ParseFiles("www/index.html")
 	if err != nil {
 		io.WriteString(w, "An error occurred when reading template")
+		log.Println(err)
 		return
 	}
 	tmpl.Execute(w, ServerInfo{RequestsPerHour:strconv.FormatInt(RateCounter.Rate(), 10), ResponseTime:LastResponse})
@@ -52,29 +59,31 @@ func index(w http.ResponseWriter, r *http.Request){
 func widgetResponse(w http.ResponseWriter, r *http.Request) {
 	startTime := time.Now()
 	RateCounter.Incr(1)
-	fmt.Println(r.URL)
 	tmpl, err := template.ParseFiles("www/widget.html")
 	if err != nil {
 		io.WriteString(w, "An error occurred when reading template")
+		log.Println(err)
 		return
 	}
 	regex, err := regexp.Compile("[^/]+$")
 	if err != nil {
 		io.WriteString(w, "An error occurred finding project id")
+		log.Println(err)
 		return
 	}
 	projectID := string(regex.Find([]byte(r.URL.String())))
 	if projectID == "" {
 		io.WriteString(w, "No or invalid project id provided")
+		log.Println(err)
 		return
 	}
 
 	projectData, found := Cache.Get(projectID)
 	if !found {
-		fmt.Println("Loading " + projectID)
 		project, err := getProjectData(projectID)
 		if err != nil {
 			io.WriteString(w, "An error occurred when loading curse data")
+			log.Println(err)
 			return
 		}
 		Cache.Set(projectID, project, cache.DefaultExpiration)
@@ -121,8 +130,8 @@ func getProjectData(projectID string) (*ProjectData, error) {
 		addonData.DownloadsPerSecond = monthlyDownloads / (30 * 24 * 60 * 60)
 	} else {
 		//No need to fail if this fails
-		fmt.Println("Failed to get download history for " + projectID)
-		fmt.Println(err)
+		log.Println("Failed to get download history for " + projectID)
+		log.Println(err)
 		addonData.DownloadsPerSecond = 0
 	}
 
@@ -134,24 +143,38 @@ func getMonthlyDownloads(projectID string, gameID int) (float64, error) {
 	if x, found := HistoryCache.Get(strconv.Itoa(gameID)); found {
 		historyData = x.(map[string]float64)
 	} else {
-		fmt.Println("Downloading game history")
 		historyBytes, err := goutils.Download("https://cursemeta.dries007.net/api/v2/history/downloads/" + strconv.Itoa(gameID) + "/monthly")
 		if err != nil {
-			fmt.Println(err)
 			return 0, err
 		}
-		fmt.Println("Reading game history")
 		var downloadMap = make(map[string]float64)
 		err = json.Unmarshal(historyBytes, &downloadMap)
 		if err != nil {
-			fmt.Println(err)
 			return 0, err
 		}
 		HistoryCache.Set(strconv.Itoa(gameID), downloadMap, cache.DefaultExpiration)
 		historyData = downloadMap
 	}
-	fmt.Println(historyData[projectID])
 	return historyData[projectID], nil
+}
+
+func logRequest(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+		handler.ServeHTTP(w, r)
+	})
+}
+
+func openLogFile(logfile string) {
+	if logfile != "" {
+		lf, err := os.OpenFile(logfile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0640)
+
+		if err != nil {
+			log.Fatal("OpenLogfile: os.OpenFile:", err)
+		}
+
+		log.SetOutput(lf)
+	}
 }
 
 type ServerInfo struct {
