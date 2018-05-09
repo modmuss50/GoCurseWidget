@@ -16,6 +16,7 @@ import (
 	"github.com/paulbellamy/ratecounter"
 	"log"
 	"os"
+	"github.com/blang/semver"
 )
 
 var (
@@ -59,7 +60,7 @@ func index(w http.ResponseWriter, r *http.Request){
 func widgetResponse(w http.ResponseWriter, r *http.Request) {
 	startTime := time.Now()
 	RateCounter.Incr(1)
-	tmpl, err := template.ParseFiles("www/widget.html")
+	tmpl, err := template.ParseFiles("www/widget_new.html")
 	if err != nil {
 		io.WriteString(w, "An error occurred when reading template")
 		log.Println(err)
@@ -126,6 +127,11 @@ func getProjectData(projectID string) (*ProjectData, error) {
 
 	monthlyDownloads, err := getMonthlyDownloads(strconv.Itoa(addonData.ID), addonData.GameID)
 
+	latestFile := populateLatestVersion(addonData)
+	addonData.LatestVersion = latestFile.GameVesion
+	addonData.LatestDownloadURL = "https://minecraft.curseforge.com/projects/" + projectID + "/files/" + strconv.Itoa(latestFile.ProjectFileID)
+
+
 	if err == nil && monthlyDownloads > 0 {
 		addonData.DownloadsPerSecond = monthlyDownloads / (30 * 24 * 60 * 60)
 	} else {
@@ -136,6 +142,59 @@ func getProjectData(projectID string) (*ProjectData, error) {
 	}
 
 	return addonData, nil
+}
+
+func populateLatestVersion(projectData *ProjectData) ProjectFile {
+	var latestFile ProjectFile
+	for _, file := range projectData.GameVersionLatestFiles {
+		gameVersion, err := semver.Make(file.GameVesion)
+		if err != nil {
+			//This wont work for things such as snapshots or other things that have stupid versions
+			continue
+		}
+		//Checks to see if the game version set is valid, if not we assume its newer than the current version
+		if latestFile.GameVesion == "" {
+			latestFile = file
+			continue
+		}
+		latestFileGameVersion, err := semver.Make(latestFile.GameVesion)
+		if err != nil {
+			continue
+		}
+		if gameVersion.Compare(latestFileGameVersion) == 1 {
+			if isMostPromotedFile(projectData, file){
+				latestFile = file
+			}
+		}
+	}
+	return latestFile
+}
+
+//Checks the file to see if it is the best file for the job, ie a beta file will return true when if no release file is present but an alpha is.
+func isMostPromotedFile(data *ProjectData, testFile ProjectFile) bool {
+	isBest := true
+	for _, file := range data.GameVersionLatestFiles {
+		if file.GameVesion == testFile.GameVesion{
+			if getFilePriority(file.FileType) > getFilePriority(testFile.FileType){
+				isBest = false
+				break
+			}
+		}
+	}
+	return isBest
+}
+
+func getFilePriority(promotion string) int {
+	if promotion == "Alpha" {
+		return 1
+	}
+	if promotion == "Beta" {
+		return 2
+	}
+	if promotion == "Release" {
+		return 3
+	}
+	return 0 //this should not get called unless something has gone very wrong
 }
 
 func getMonthlyDownloads(projectID string, gameID int) (float64, error) {
@@ -188,6 +247,8 @@ type ProjectData struct {
 	DownloadCountPretty string //This is a nice looking download count
 	DownloadsPerSecond  float64
 	SimulateDownloadCount bool
+	LatestVersion string
+	LatestDownloadURL string
 
 	Attachments []struct {
 		Description  interface{} `json:"Description"`
@@ -222,12 +283,7 @@ type ProjectData struct {
 	ExternalURL        interface{} `json:"ExternalUrl"`
 	GameID             int         `json:"GameId"`
 	GamePopularityRank int         `json:"GamePopularityRank"`
-	GameVersionLatestFiles []struct {
-		FileType        string `json:"FileType"`
-		GameVesion      string `json:"GameVesion"`
-		ProjectFileID   int    `json:"ProjectFileID"`
-		ProjectFileName string `json:"ProjectFileName"`
-	} `json:"GameVersionLatestFiles"`
+	GameVersionLatestFiles []ProjectFile `json:"GameVersionLatestFiles"`
 	IconID       int `json:"IconId"`
 	ID           int `json:"Id"`
 	InstallCount int `json:"InstallCount"`
@@ -267,4 +323,11 @@ type ProjectData struct {
 	Status                   string  `json:"Status"`
 	Summary                  string  `json:"Summary"`
 	WebSiteURL               string  `json:"WebSiteURL"`
+}
+
+type ProjectFile struct {
+	FileType        string `json:"FileType"`
+	GameVesion      string `json:"GameVesion"`
+	ProjectFileID   int    `json:"ProjectFileID"`
+	ProjectFileName string `json:"ProjectFileName"`
 }
