@@ -55,7 +55,6 @@
     </style>
 
 </head>
-
 <body>
 <div class="container" style="margin-left: 0px">
     <div class="row">
@@ -78,13 +77,29 @@
             <a href="/widget/233564">Example</a>
         </div>
         <div class="col-8">
-            <iframe src="/widget/233564" width="800" height="150" scrolling="no" seamless="seamless" style="border: none;"></iframe>
+            <iframe src="/widget/233564" width="800" height="170" scrolling="no" seamless="seamless" style="border: none;"></iframe>
             <p>The best way to the use widget is to use an iframe to embed it onto your site.</p>
-            <pre><code>&lt;iframe src=&quot;http://curse.modmuss50.me/widget/233564&quot; width=&quot;800&quot; height=&quot;150&quot; scrolling=&quot;no&quot; seamless=&quot;seamless&quot; style=&quot;border: none;&quot;&gt;&lt;/iframe&gt;</code></pre>
+            <pre><code>&lt;iframe src=&quot;http://curse.modmuss50.me/widget/233564&quot; width=&quot;800&quot; height=&quot;170&quot; scrolling=&quot;no&quot; seamless=&quot;seamless&quot; style=&quot;border: none;&quot;&gt;&lt;/iframe&gt;</code></pre>
             <p>Remember that the first time a project is requested it will take slightly longer to load while the data is retrieved from <a href="https://cursemeta.dries007.net/">CurseMeta</a>. Project data is cached for 30 mins.</p>
-            <p>The downloader counter will count up, simulating a live download counter. This is NOT a live download counter, but is based on the last 30 days of downloads on the project and then averaged out. This can be disabled by appending the following to the url.</p>
-            <pre><code>?simulateDownloadCount=false</code></pre>
-            <p>If you have any ideas for this site please let me know, as there is quite a lot of other things that could be added to this. The design of the widget does need changing, this will happen soon.</p>
+            <p>The downloader counter will count up, simulating a live download counter. This is NOT a live download counter, but is based on the last 30 days of downloads on the project and then averaged out.</p>
+
+            <h3>Flags:</h3>
+            <p>These various flags when appended to the end of the URL, will change things about the widget. Include a <b>?</b> before the first flag you add, and a <b>&amp</b> before any additional flags you add.</p>
+            <hr></hr>
+            
+            <h4>simulateDownloadCount</h4>
+            <p>This flag disables the simulated "live" download counter. This flag only accepts <b>true</b> and <b>false</b>.</p>
+            <h5>Example:</h5>
+            <pre><code>http://curse.modmuss50.me/widget/233564<b>?simulateDownloadCount=false</b></code></pre>
+            <iframe src="/widget/233564?simulateDownloadCount=false" width="800" height="170" scrolling="no" seamless="seamless" style="border: none;"></iframe>
+            <hr></hr>
+
+            <h4>accentColor</h4>
+            <p>By default, the widget will pull a vibrant accent color from the image if it can. You can force the widget to use a certain accent color by adding a hex color code in this flag. Note that the <b>%23</b> is the escape code that translates to <b>#</b>, so that <b>must</b> be used before a hex code. Using a # will not work as it has its own function in URLs.</p>
+            <h5>Example:</h5>
+            <pre><code>http://curse.modmuss50.me/widget/233564<b>?accentColor=%23000000</b></code></pre>
+            <iframe src="/widget/233564?accentColor=%23000000" width="800" height="170" scrolling="no" seamless="seamless" style="border: none;"></iframe>
+            <hr></hr>
         </div>
     </div>
     <div class="row">
