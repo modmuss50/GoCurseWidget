@@ -1,0 +1,148 @@
+<html>
+
+<head>
+    <link href="https://files.modmuss50.me/files/simple-grid.min.css" rel="stylesheet">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css?family=Montserrat:500,600,700|Roboto:400,700');
+
+        * {
+            margin-top: 0px;
+            margin-bottom: 0px;
+            background-color: {{.BackgroundColor}};
+        }
+
+        .button-raised {
+            box-shadow: 1px 1px 4px 0px {{.ShadowColor}}
+        }
+
+        .button-flat {
+            background-color: rgba(0, 0, 0, 0);
+            color:{{.AccentColor}};
+        }
+
+        .button-flat:before {
+            background: {{.AccentColorHalfAlpha}};
+        }
+
+        /* Material style */
+        button {
+            border: none;
+            cursor: pointer;
+            color: {{.ButtonTextColor}};
+            font-family: 'Roboto', sans-serif;
+            font-weight: bold;
+            padding: 9px 14px;
+            border-radius: 2px;
+            font-size: 16px;
+            background-color: {{.AccentColor}};
+        }
+
+        button:focus {
+            outline: none;
+        }
+
+        /* Ripple magic */
+        button {
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, .5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
+        }
+
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 0.5;
+            }
+            100% {
+                opacity: 0;
+                transform: scale(80, 80);
+            }
+        }
+
+        button:active::before {
+            animation: ripple 0.8s ease-out;
+        }
+
+        p {
+            color: {{.NormalTextColor}};
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .p-title {
+            margin-top: -4px;
+            margin-bottom: -2px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: bold;
+            font-size: 20px;
+            line-height: 30px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .p-downloads {
+            margin-top: 0px;
+            color: {{.NormalTextColor}};
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 500;
+            font-size: 16px;
+        }
+    </style>
+
+{{if .SimulateDownloadCount}}
+    <script>
+        var downloads = {{.DownloadCount}};
+        window.setInterval(
+                function () {
+                    downloads = downloads + {{.DownloadsPerSecond}};
+                    document.getElementById("downloads").innerHTML = numberWithCommas(Math.round(downloads)) + " downloads";
+
+                }, 1000);
+
+        const numberWithCommas = (x) => {
+            return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+    </script>
+{{end}}
+</head>
+
+<body style="max-width:460">
+<div class="row">
+    <div class="column" style="max-width:140px;max-height:140px;margin:10px">
+        <img src="{{.Thumbnail}}" alt="" style="width:140px;height:140px;"/>
+    </div>
+    <div class="column"
+         style="max-width:280;margin:0px;margin-top:8px;margin-bottom:10px;margin-right:10px;text-align: center;">
+        <p class="p-title" style="margin-right:0px;">{{.Name}}</p>
+        <cite id="downloads" class="p-downloads">{{.DownloadCountPretty}} downloads</cite>
+        <br/>
+        <div style="margin-top:4px">
+            <a href="{{.LatestDownloadURL}}" target="_blank">
+                <button id="dlbutton" class="button-raised" style="margin-right:0px;">DOWNLOAD
+                    FOR {{.LatestVersion}}</button>
+            </a>
+            <p>
+            </p>
+            <a href="{{.ProjectURL}}" target="_blank">
+                <button id="projbutton" class="button-flat" style="margin-left:2px;margin-right:0px;margin-top:4px">
+                    PROJECT PAGE
+                </button>
+            </a></div>
+    </div>
+</div>
+</body>
+</html>
