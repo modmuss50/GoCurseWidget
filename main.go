@@ -25,13 +25,15 @@ import (
 )
 
 var (
-	Cache        *cache.Cache
-	HistoryCache *cache.Cache
-	RateCounter  *ratecounter.RateCounter
-	LastResponse string
+	Cache          *cache.Cache
+	HistoryCache   *cache.Cache
+	RateCounter    *ratecounter.RateCounter
+	LastResponse   string
+	WidgetTemplate string
+	DirectDownload bool
 )
 
-const Port = "8888";
+const Port = "8888"
 
 func main() {
 	//Creates a 30 min cache, cleans up every 1 min
@@ -88,19 +90,33 @@ func processColorFlag(flag string, r *http.Request, validExceptions ... string) 
 func widgetResponse(w http.ResponseWriter, r *http.Request) {
 	startTime := time.Now()
 	RateCounter.Incr(1)
-	tmpl, err := template.ParseFiles("www/widget.html")
+	WidgetTemplate = "horizontal"
+	widgetTemplate := r.URL.Query().Get("widgetTemplate")
+	if widgetTemplate == "horizontal" || widgetTemplate == "vertical" || widgetTemplate == "compact" {
+		WidgetTemplate = widgetTemplate
+	}
+	tmpl, err := template.ParseFiles("www/" + WidgetTemplate + ".html")
 	if err != nil {
 		io.WriteString(w, "An error occurred when reading template")
 		log.Println(err)
 		return
 	}
-	regex, err := regexp.Compile("[^/]+$")
+	regex, err := regexp.Compile(`/widget/(?P<id>[0-9]+)`)
 	if err != nil {
 		io.WriteString(w, "An error occurred finding project id")
 		log.Println(err)
 		return
 	}
-	projectID := string(regex.Find([]byte(r.URL.String())))
+
+	match := regex.FindStringSubmatch(r.URL.String())
+	result := make(map[string]string)
+	for i, name := range regex.SubexpNames() {
+		if i != 0 && name != "" {
+			result[name] = match[i]
+		}
+	}
+
+	projectID := result["id"]
 	if projectID == "" {
 		io.WriteString(w, "No or invalid project id provided")
 		log.Println(err)
@@ -126,6 +142,15 @@ func widgetResponse(w http.ResponseWriter, r *http.Request) {
 		simBool, err := strconv.ParseBool(simulateDownloadCountParam)
 		if err == nil {
 			projectData.(*ProjectData).SimulateDownloadCount = simBool
+		}
+	}
+
+	DirectDownload = false
+	directDownload := r.URL.Query().Get("directDownload")
+	if directDownload != "" {
+		directDlBool, err := strconv.ParseBool(simulateDownloadCountParam)
+		if err == nil {
+			DirectDownload = directDlBool
 		}
 	}
 
@@ -162,7 +187,7 @@ func widgetResponse(w http.ResponseWriter, r *http.Request) {
 	projectData.(*ProjectData).AccentColorHalfAlpha = projectData.(*ProjectData).AccentColor + "80"
 
 	color, err := colors.Parse(projectData.(*ProjectData).AccentColor)
-	if color.IsLight() {
+	if !color.IsDark() {
 		projectData.(*ProjectData).ButtonTextColor = "black"
 	} else {
 		projectData.(*ProjectData).ButtonTextColor = "white"
@@ -230,10 +255,14 @@ func getProjectData(projectID string) (*ProjectData, error) {
 	monthlyDownloads, err := getMonthlyDownloads(strconv.Itoa(addonData.ID), addonData.GameID)
 
 	latestFile := populateLatestVersion(addonData)
-	addonData.LatestVersion = latestFile.GameVesion
-	addonData.LatestDownloadURL = "https://minecraft.curseforge.com/projects/" + projectID + "/files/" + strconv.Itoa(latestFile.ProjectFileID)
+	fildID := strconv.Itoa(latestFile.ProjectFileID)
+	addonData.DownloadVersion = latestFile.GameVesion
+	if DirectDownload {
+		addonData.DownloadURL = "https://minecraft.curseforge.com/projects/" + projectID + "/files/" + fildID
+	} else {
+		addonData.DownloadURL = "https://minecraft.curseforge.com/projects/" + projectID + "/files/" + fildID + "/download"
+	}
 	addonData.ProjectURL = "https://minecraft.curseforge.com/projects/" + projectID
-	//fmt.Println(addonData.ProjectURL)
 
 	if err == nil && monthlyDownloads > 0 {
 		addonData.DownloadsPerSecond = monthlyDownloads / (30 * 24 * 60 * 60)
@@ -350,8 +379,8 @@ type ProjectData struct {
 	DownloadCountPretty   string //This is a nice looking download count
 	DownloadsPerSecond    float64
 	SimulateDownloadCount bool
-	LatestVersion         string
-	LatestDownloadURL     string
+	DownloadVersion       string
+	DownloadURL           string
 	ProjectURL            string
 	AccentColor           string
 	AccentColorHalfAlpha  string

@@ -5,6 +5,7 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css?family=Montserrat:500,600,700|Roboto:400,700');
+
         * {
             margin-top: 0px;
             margin-bottom: 0px;
@@ -14,10 +15,12 @@
         .button-raised {
             box-shadow: 1px 1px 4px 0px {{.ShadowColor}}
         }
+
         .button-flat {
-            background-color:rgba(0, 0, 0, 0);
+            background-color: rgba(0, 0, 0, 0);
             color:{{.AccentColor}};
         }
+
         .button-flat:before {
             background: {{.AccentColorHalfAlpha}};
         }
@@ -35,12 +38,12 @@
             background-color: {{.AccentColor}};
         }
 
-        button:focus{
+        button:focus {
             outline: none;
         }
 
         /* Ripple magic */
-        button{
+        button {
             position: relative;
             overflow: hidden;
         }
@@ -74,24 +77,33 @@
             animation: ripple 0.8s ease-out;
         }
 
-        p{
+        p {
             color: {{.NormalTextColor}};
             font-family: 'Roboto', sans-serif;
         }
-        .p-title{
-            margin-top: -10px;
-            margin-bottom: -8px;
+
+        .p-title {
+            margin-top: -4px;
+            margin-bottom: 0px;
+            margin-left: 4px;
+            margin-right: 4px;
             font-family: 'Montserrat', sans-serif;
             font-weight: bold;
-            font-size: 26px;
+            font-size: 20px;
+            line-height: 30px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
         }
-        .p-downloads{
+
+        .p-downloads {
             margin-top: 0px;
             color: {{.NormalTextColor}};
             font-family: 'Montserrat', sans-serif;
             font-weight: 500;
             font-size: 16px;
         }
+
         .textBlock {
             font-family: 'Roboto', sans-serif;
             font-size: 16px;
@@ -101,7 +113,7 @@
             line-height: 19px;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
-            height:40px;
+            height: 40px;
             overflow: hidden;
         }
     </style>
@@ -123,18 +135,20 @@
 {{end}}
 </head>
 
-<body>
-<div class="row">
-    <div class="column" style="max-width:150px;max-height:150px;margin:10px">
-        <img src="{{.Thumbnail}}" alt="" style="width:150px;height:150px;"/>
-    </div>
-    <div class="column" style="max-width:630;margin:0px;margin-top:8px;margin-bottom:10px">
-        <p class="p-title"style="margin-right:0px;">{{.Name}}</p>
-        <cite id="downloads" class="p-downloads">{{.DownloadCountPretty}} downloads</cite>
-        <p class="textBlock"style="margin-right:0px;">{{.Summary}}</p>
-        <a href="{{.LatestDownloadURL}}" target="_blank"><button id="dlbutton" class="button-raised" style="margin-right:0px;">DOWNLOAD FOR {{.LatestVersion}}</button></a>
-        <a href="{{.ProjectURL}}" target="_blank"><button id="projbutton" class="button-flat" style="margin-left:2px;margin-right:0px;">PROJECT PAGE</button></a>
-    </div>
-  </div>
+<body style="max-width:220;max-height:420;text-align: center">
+<div class="row" style="max-width:220px;max-height:220px">
+    <img src="{{.Thumbnail}}" alt="" style="width:200px;height:200px;margin:10"/>
+</div>
+<div class="row" style="max-width:220">
+    <p class="p-title">{{.Name}}</p>
+    <cite id="downloads" class="p-downloads">{{.DownloadCountPretty}} downloads</cite>
+    <p class="textBlock" style="margin-left:5px">{{.Summary}}</p>
+    <a href="{{.DownloadURL}}" target="_blank">
+        <button id="dlbutton" class="button-raised">DOWNLOAD FOR {{.DownloadVersion}}</button>
+    </a>
+    <a href="{{.ProjectURL}}" target="_blank">
+        <button id="projbutton" class="button-flat" style="margin-top:4px">PROJECT PAGE</button>
+    </a>
+</div>
 </body>
 </html>
