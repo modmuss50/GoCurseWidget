@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"io"
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
 	"html/template"
 	"github.com/dustin/go-humanize"
 	"regexp"
@@ -17,14 +20,18 @@ import (
 	"log"
 	"os"
 	"github.com/blang/semver"
+	"gopkg.in/go-playground/colors.v1"
+	"github.com/generaltso/vibrant"
 )
 
 var (
 	Cache        *cache.Cache
 	HistoryCache *cache.Cache
-	RateCounter *ratecounter.RateCounter
+	RateCounter  *ratecounter.RateCounter
 	LastResponse string
 )
+
+const Port = "8888";
 
 func main() {
 	//Creates a 30 min cache, cleans up every 1 min
@@ -40,27 +47,48 @@ func main() {
 	openLogFile("gocurse.log")
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
-	fmt.Println("Starting at http://localhost:8888")
+	fmt.Println("Starting at http://localhost:" + Port)
 
 	http.HandleFunc("/", index)
 	http.HandleFunc("/widget/", widgetResponse)
-	http.ListenAndServe(":8888", logRequest(http.DefaultServeMux))
+	http.ListenAndServe(":"+Port, logRequest(http.DefaultServeMux))
 }
 
-func index(w http.ResponseWriter, r *http.Request){
+func index(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles("www/index.html")
 	if err != nil {
 		io.WriteString(w, "An error occurred when reading template")
 		log.Println(err)
 		return
 	}
-	tmpl.Execute(w, ServerInfo{RequestsPerHour:strconv.FormatInt(RateCounter.Rate(), 10), ResponseTime:LastResponse})
+	tmpl.Execute(w, ServerInfo{RequestsPerHour: strconv.FormatInt(RateCounter.Rate(), 10), ResponseTime: LastResponse})
+}
+
+func processColorFlag(flag string, r *http.Request, validExceptions ... string) (valid bool, color string) {
+	flagData := r.URL.Query().Get(flag)
+	if flagData != "" {
+		color, err := colors.Parse(flagData)
+		if err == nil {
+			return true, color.ToHEX().String()
+		} else {
+			color, err := colors.Parse("#" + flagData)
+			if err == nil {
+				return true, color.ToHEX().String()
+			}
+		}
+	}
+	for _, value := range validExceptions {
+		if value == flagData {
+			return true, flagData
+		}
+	}
+	return false, ""
 }
 
 func widgetResponse(w http.ResponseWriter, r *http.Request) {
 	startTime := time.Now()
 	RateCounter.Incr(1)
-	tmpl, err := template.ParseFiles("www/widget_new.html")
+	tmpl, err := template.ParseFiles("www/widget.html")
 	if err != nil {
 		io.WriteString(w, "An error occurred when reading template")
 		log.Println(err)
@@ -101,6 +129,80 @@ func widgetResponse(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	projectData.(*ProjectData).AccentColor = "#2c3e50"
+	accentValid, accentColor := processColorFlag("accentColor", r)
+	if accentValid {
+		projectData.(*ProjectData).AccentColor = accentColor
+	} else {
+		url := projectData.(*ProjectData).Thumbnail
+
+		resp, err := http.Get(url)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer resp.Body.Close()
+
+		checkErr := func(err error) {
+			if err != nil {
+				panic(err)
+			}
+		}
+
+		img, _, err := image.Decode(resp.Body)
+		checkErr(err)
+
+		palette, err := vibrant.NewPaletteFromImage(img)
+		checkErr(err)
+
+		vibrantColor := palette.ExtractAwesome()["Vibrant"]
+		if err == nil && vibrantColor != nil {
+			projectData.(*ProjectData).AccentColor = vibrantColor.Color.RGBHex()
+		}
+	}
+	projectData.(*ProjectData).AccentColorHalfAlpha = projectData.(*ProjectData).AccentColor + "80"
+
+	color, err := colors.Parse(projectData.(*ProjectData).AccentColor)
+	if color.IsLight() {
+		projectData.(*ProjectData).ButtonTextColor = "black"
+	} else {
+		projectData.(*ProjectData).ButtonTextColor = "white"
+	}
+
+	projectData.(*ProjectData).NormalTextColor = "black"
+	projectData.(*ProjectData).ShadowColor = "#888888"
+	projectData.(*ProjectData).BackgroundColor = "transparent"
+	darkTheme := r.URL.Query().Get("darkTheme")
+	if darkTheme != "" {
+		darkBool, err := strconv.ParseBool(darkTheme)
+		if err == nil {
+			if darkBool == true {
+				projectData.(*ProjectData).NormalTextColor = "white"
+				projectData.(*ProjectData).ShadowColor = "transparent"
+				projectData.(*ProjectData).BackgroundColor = "#1B1B1B"
+			}
+		}
+	}
+
+	overrideButtonTextValid, overrideButtonTextColor := processColorFlag("overrideButtonTextColor", r)
+	if overrideButtonTextValid {
+		projectData.(*ProjectData).ButtonTextColor = overrideButtonTextColor
+	}
+
+	normalTextValid, normalTextColor := processColorFlag("normalTextColor", r)
+	if normalTextValid {
+		projectData.(*ProjectData).NormalTextColor = normalTextColor
+	}
+
+	shadowValid, buttonShadowColor := processColorFlag("buttonShadowColor", r, "transparent")
+	if shadowValid {
+		projectData.(*ProjectData).ShadowColor = buttonShadowColor
+	}
+
+	backgroundValid, backgroundColor := processColorFlag("backgroundColor", r, "transparent")
+	if backgroundValid {
+		projectData.(*ProjectData).BackgroundColor = backgroundColor
+	}
+
 	tmpl.Execute(w, projectData)
 	LastResponse = time.Since(startTime).String()
 }
@@ -130,7 +232,8 @@ func getProjectData(projectID string) (*ProjectData, error) {
 	latestFile := populateLatestVersion(addonData)
 	addonData.LatestVersion = latestFile.GameVesion
 	addonData.LatestDownloadURL = "https://minecraft.curseforge.com/projects/" + projectID + "/files/" + strconv.Itoa(latestFile.ProjectFileID)
-
+	addonData.ProjectURL = "https://minecraft.curseforge.com/projects/" + projectID
+	//fmt.Println(addonData.ProjectURL)
 
 	if err == nil && monthlyDownloads > 0 {
 		addonData.DownloadsPerSecond = monthlyDownloads / (30 * 24 * 60 * 60)
@@ -162,7 +265,7 @@ func populateLatestVersion(projectData *ProjectData) ProjectFile {
 			continue
 		}
 		if gameVersion.Compare(latestFileGameVersion) == 1 {
-			if isMostPromotedFile(projectData, file){
+			if isMostPromotedFile(projectData, file) {
 				latestFile = file
 			}
 		}
@@ -174,8 +277,8 @@ func populateLatestVersion(projectData *ProjectData) ProjectFile {
 func isMostPromotedFile(data *ProjectData, testFile ProjectFile) bool {
 	isBest := true
 	for _, file := range data.GameVersionLatestFiles {
-		if file.GameVesion == testFile.GameVesion{
-			if getFilePriority(file.FileType) > getFilePriority(testFile.FileType){
+		if file.GameVesion == testFile.GameVesion {
+			if getFilePriority(file.FileType) > getFilePriority(testFile.FileType) {
 				isBest = false
 				break
 			}
@@ -238,17 +341,24 @@ func openLogFile(logfile string) {
 
 type ServerInfo struct {
 	RequestsPerHour string
-	ResponseTime string
+	ResponseTime    string
 }
 
 //Made with https://mholt.github.io/json-to-go/
 type ProjectData struct {
-	Thumbnail           string //Not in json, moved here to make things easier
-	DownloadCountPretty string //This is a nice looking download count
-	DownloadsPerSecond  float64
+	Thumbnail             string //Not in json, moved here to make things easier
+	DownloadCountPretty   string //This is a nice looking download count
+	DownloadsPerSecond    float64
 	SimulateDownloadCount bool
-	LatestVersion string
-	LatestDownloadURL string
+	LatestVersion         string
+	LatestDownloadURL     string
+	ProjectURL            string
+	AccentColor           string
+	AccentColorHalfAlpha  string
+	ButtonTextColor       string
+	NormalTextColor       string
+	ShadowColor           string
+	BackgroundColor       string
 
 	Attachments []struct {
 		Description  interface{} `json:"Description"`
@@ -276,18 +386,18 @@ type ProjectData struct {
 		PackageType             string      `json:"PackageType"`
 		Path                    string      `json:"Path"`
 	} `json:"CategorySection"`
-	CommentCount       int         `json:"CommentCount"`
-	DefaultFileID      int         `json:"DefaultFileId"`
-	DonationURL        interface{} `json:"DonationUrl"`
-	DownloadCount      float64     `json:"DownloadCount"`
-	ExternalURL        interface{} `json:"ExternalUrl"`
-	GameID             int         `json:"GameId"`
-	GamePopularityRank int         `json:"GamePopularityRank"`
+	CommentCount           int           `json:"CommentCount"`
+	DefaultFileID          int           `json:"DefaultFileId"`
+	DonationURL            interface{}   `json:"DonationUrl"`
+	DownloadCount          float64       `json:"DownloadCount"`
+	ExternalURL            interface{}   `json:"ExternalUrl"`
+	GameID                 int           `json:"GameId"`
+	GamePopularityRank     int           `json:"GamePopularityRank"`
 	GameVersionLatestFiles []ProjectFile `json:"GameVersionLatestFiles"`
-	IconID       int `json:"IconId"`
-	ID           int `json:"Id"`
-	InstallCount int `json:"InstallCount"`
-	IsFeatured   int `json:"IsFeatured"`
+	IconID                 int           `json:"IconId"`
+	ID                     int           `json:"Id"`
+	InstallCount           int           `json:"InstallCount"`
+	IsFeatured             int           `json:"IsFeatured"`
 	LatestFiles []struct {
 		AlternateFileID int `json:"AlternateFileId"`
 		Dependencies []struct {

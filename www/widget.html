@@ -8,31 +8,31 @@
         * {
             margin-top: 0px;
             margin-bottom: 0px;
-            background-color: #EBEBEB;
+            background-color: {{.BackgroundColor}};
         }
 
         .button-raised {
-            box-shadow: 1px 1px 4px 0px #888888
+            box-shadow: 1px 1px 4px 0px {{.ShadowColor}}
         }
         .button-flat {
             background-color:rgba(0, 0, 0, 0);
-            color:rgba(46, 90, 214, 1);
+            color:{{.AccentColor}};
         }
         .button-flat:before {
-            background: rgba(46, 90, 214, 0.5);
+            background: {{.AccentColorHalfAlpha}};
         }
 
         /* Material style */
         button {
             border: none;
             cursor: pointer;
-            color: white;
+            color: {{.ButtonTextColor}};
             font-family: 'Roboto', sans-serif;
             font-weight: bold;
             padding: 9px 14px;
             border-radius: 2px;
             font-size: 16px;
-            background-color: rgb(46, 90, 214);
+            background-color: {{.AccentColor}};
         }
 
         button:focus{
@@ -75,17 +75,19 @@
         }
 
         p{
-            color: black;
+            color: {{.NormalTextColor}};
             font-family: 'Roboto', sans-serif;
         }
         .p-title{
             margin-top: -10px;
+            margin-bottom: -8px;
             font-family: 'Montserrat', sans-serif;
             font-weight: bold;
             font-size: 26px;
         }
         .p-downloads{
-            margin-top: -10px;
+            margin-top: 0px;
+            color: {{.NormalTextColor}};
             font-family: 'Montserrat', sans-serif;
             font-weight: 500;
             font-size: 16px;
@@ -94,7 +96,7 @@
             font-family: 'Roboto', sans-serif;
             font-size: 16px;
             margin-top: 8px;
-            margin-bottom: 8px;
+            margin-bottom: 9px;
             display: -webkit-box;
             line-height: 19px;
             -webkit-line-clamp: 2;
@@ -102,7 +104,6 @@
             height:40px;
             overflow: hidden;
         }
-
     </style>
 
 {{if .SimulateDownloadCount}}
@@ -123,21 +124,17 @@
 </head>
 
 <body>
-<div class="container" style="margin-left: 0px">
-    <div class="row">
-        <div class="col-3-sm" style="overflow:visible; margin-top:10px; margin-bottom:10px; margin-left:10px">
-            <img src="{{.Thumbnail}}" alt="" style="width:150px;height:150px"/>
-        </div>
-        <div class="col-8-sm" style="overflow:visible; margin-bottom:10px">
-            <p class="p-title">{{.Name}}</p>
-            <cite id="downloads" class="p-downloads">{{.DownloadCountPretty}} downloads</cite>
-                <p class="textBlock">
-                {{.Summary}}
-                </p>
-                <a href="{{.WebSiteURL}}" target="_blank"><button class="button-raised">DOWNLOAD FOR {{.LatestVersion}}</button></a>
-                <a href="{{.WebSiteURL}}" target="_blank"><button class="button-flat" style="margin-left:2px">PROJECT PAGE</button></a>
-        </div>
+<div class="row">
+    <div class="column" style="max-width:150px;max-height:150px;margin:10px">
+        <img src="{{.Thumbnail}}" alt="" style="width:150px;height:150px;"/>
     </div>
-</div>
+    <div class="column" style="max-width:630;margin:0px;margin-top:8px;margin-bottom:10px">
+        <p class="p-title"style="margin-right:0px;">{{.Name}}</p>
+        <cite id="downloads" class="p-downloads">{{.DownloadCountPretty}} downloads</cite>
+        <p class="textBlock"style="margin-right:0px;">{{.Summary}}</p>
+        <a href="{{.LatestDownloadURL}}" target="_blank"><button id="dlbutton" class="button-raised" style="margin-right:0px;">DOWNLOAD FOR {{.LatestVersion}}</button></a>
+        <a href="{{.ProjectURL}}" target="_blank"><button id="projbutton" class="button-flat" style="margin-left:2px;margin-right:0px;">PROJECT PAGE</button></a>
+    </div>
+  </div>
 </body>
 </html>
