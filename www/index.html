@@ -77,28 +77,104 @@
             <a href="/widget/233564">Example</a>
         </div>
         <div class="col-8">
+            <h2>How to Use:</h2>
             <iframe src="/widget/233564" width="800" height="170" scrolling="no" seamless="seamless" style="border: none;"></iframe>
             <p>The best way to the use widget is to use an iframe to embed it onto your site.</p>
             <pre><code>&lt;iframe src=&quot;http://curse.modmuss50.me/widget/233564&quot; width=&quot;800&quot; height=&quot;170&quot; scrolling=&quot;no&quot; seamless=&quot;seamless&quot; style=&quot;border: none;&quot;&gt;&lt;/iframe&gt;</code></pre>
+            <p>The number after <b>/widget/</b> is the CurseForge project ID. This can be found on your CurseForge project page on the right sidebar right up at the top.</p>
             <p>Remember that the first time a project is requested it will take slightly longer to load while the data is retrieved from <a href="https://cursemeta.dries007.net/">CurseMeta</a>. Project data is cached for 30 mins.</p>
-            <p>The downloader counter will count up, simulating a live download counter. This is NOT a live download counter, but is based on the last 30 days of downloads on the project and then averaged out.</p>
+            <p>The downloader counter will count up, simulating a live download counter. This is NOT a live download counter, but is based on the last 30 days of downloads on the project and then averaged out. This can be disabled with a flag, see below.</p>
 
-            <h3>Flags:</h3>
+
+            <h2>Suggested Presets:</h2>
+            <p>These presets use various flags to make custom-styled widgets.</p>
+            <p><b>To use a preset, use the link in the code blocks instead of the link in the example embedded widget above.</b></p>
+            <hr></hr>
+
+            <h4>Default</h4>
+            <pre><code>http://curse.modmuss50.me/widget/233564</code></pre>
+            <iframe src="/widget/233564" width="800" height="170" scrolling="no" seamless="seamless" style="border: none;"></iframe>
+            <hr></hr>
+
+            <h4>Monochrome</h4>
+            <pre><code>http://curse.modmuss50.me/widget/233564<b>?accentColor=000</b></code></pre>
+            <iframe src="/widget/233564?accentColor=000" width="800" height="170" scrolling="no" seamless="seamless" style="border: none;"></iframe>
+            <hr></hr>
+
+            <h4>CurseForge Green</h4>
+            <pre><code>http://curse.modmuss50.me/widget/233564<b>?accentColor=58B142&ampoverrideButtonTextColor=FFF</b></code></pre>
+            <iframe src="/widget/233564?accentColor=58B142&overrideButtonTextColor=FFF" width="800" height="170" scrolling="no" seamless="seamless" style="border: none;"></iframe>
+            <hr></hr>
+
+            <h4>CurseForge Orange</h4>
+            <pre><code>http://curse.modmuss50.me/widget/233564<b>?accentColor=DD6940&ampoverrideButtonTextColor=FFF</b></code></pre>
+            <iframe src="/widget/233564?accentColor=DD6940&overrideButtonTextColor=FFF" width="800" height="170" scrolling="no" seamless="seamless" style="border: none;"></iframe>
+            <hr></hr>
+
+            <h4>Softer Default</h4>
+            <pre><code>http://curse.modmuss50.me/widget/233564?normalTextColor=4C4C4C&ampbackgroundColor=EFEFEF</code></pre>
+            <iframe src="/widget/233564?normalTextColor=4C4C4C&backgroundColor=EFEFEF" width="800" height="170" scrolling="no" seamless="seamless" style="border: none;"></iframe>
+            <hr></hr>
+            
+            <h4>Dark</h4>
+            <pre><code>http://curse.modmuss50.me/widget/233564<b>?darkTheme=true</b></code></pre>
+            <iframe src="/widget/233564?darkTheme=true" width="800" height="170" scrolling="no" seamless="seamless" style="border: none;"></iframe>
+            <hr></hr>
+
+            <h4>Dark Monochrome</h4>
+            <pre><code>http://curse.modmuss50.me/widget/233564<b>?darkTheme=true&ampaccentColor=FFF</b></code></pre>
+            <iframe src="/widget/233564?darkTheme=true&accentColor=FFF" width="800" height="170" scrolling="no" seamless="seamless" style="border: none;"></iframe>
+            <hr></hr>
+
+            <h4>Black</h4>
+            <pre><code>http://curse.modmuss50.me/widget/233564?normalTextColor=FFF&ampbackgroundColor=000&ampbuttonShadowColor=transparent</code></pre>
+            <iframe src="/widget/233564?normalTextColor=FFF&backgroundColor=000&buttonShadowColor=transparent" width="800" height="170" scrolling="no" seamless="seamless" style="border: none;"></iframe>
+            <hr></hr>
+
+            <h2>All Flags:</h2>
             <p>These various flags when appended to the end of the URL, will change things about the widget. Include a <b>?</b> before the first flag you add, and a <b>&amp</b> before any additional flags you add.</p>
             <hr></hr>
             
             <h4>simulateDownloadCount</h4>
             <p>This flag disables the simulated "live" download counter. This flag only accepts <b>true</b> and <b>false</b>.</p>
-            <h5>Example:</h5>
             <pre><code>http://curse.modmuss50.me/widget/233564<b>?simulateDownloadCount=false</b></code></pre>
             <iframe src="/widget/233564?simulateDownloadCount=false" width="800" height="170" scrolling="no" seamless="seamless" style="border: none;"></iframe>
             <hr></hr>
 
             <h4>accentColor</h4>
-            <p>By default, the widget will pull a vibrant accent color from the image if it can. You can force the widget to use a certain accent color by adding a hex color code in this flag. Note that the <b>%23</b> is the escape code that translates to <b>#</b>, so that <b>must</b> be used before a hex code. Using a # will not work as it has its own function in URLs.</p>
-            <h5>Example:</h5>
-            <pre><code>http://curse.modmuss50.me/widget/233564<b>?accentColor=%23000000</b></code></pre>
-            <iframe src="/widget/233564?accentColor=%23000000" width="800" height="170" scrolling="no" seamless="seamless" style="border: none;"></iframe>
+            <p>By default, the widget will pull a vibrant accent color from the image if it can. You can force the widget to use a certain accent color by adding a hex color code in this flag. Be sure not to use a <b>#</b> in the URL, as that will not work.</p>
+            <pre><code>http://curse.modmuss50.me/widget/233564<b>?accentColor=F78</b></code></pre>
+            <iframe src="/widget/233564?accentColor=F9A" width="800" height="170" scrolling="no" seamless="seamless" style="border: none;"></iframe>
+            <hr></hr>
+
+            <h4>backgroundColor</h4>
+            <p>This flag can be used to set the normally transparent background to any color you wish. (Supports 'transparent')</p>
+            <pre><code>http://curse.modmuss50.me/widget/233564<b>?backgroundColor=F00</b></code></pre>
+            <iframe src="/widget/233564?backgroundColor=F00" width="800" height="170" scrolling="no" seamless="seamless" style="border: none;"></iframe>
+            <hr></hr>
+
+            <h4>normalTextColor</h4>
+            <p>This flag can be used to set the text color for everything outside of the buttons.</p>
+            <pre><code>http://curse.modmuss50.me/widget/233564<b>?normalTextColor=00F</b></code></pre>
+            <iframe src="/widget/233564?normalTextColor=00F" width="800" height="170" scrolling="no" seamless="seamless" style="border: none;"></iframe>
+            <hr></hr>
+
+            <h4>overrideButtonTextColor</h4>
+            <p>This flag can be used to override the color of the text on the Download button. Normally either white or black is automagically selected based on if the background accent color is dark or light.</p>
+            <pre><code>http://curse.modmuss50.me/widget/233564<b>?overrideButtonTextColor=FF0</b></code></pre>
+            <iframe src="/widget/233564?overrideButtonTextColor=FF0" width="800" height="170" scrolling="no" seamless="seamless" style="border: none;"></iframe>
+            <hr></hr>
+
+            <h4>buttonShadowColor</h4>
+            <p>This flag sets the shadow color of the Download button, normally a grey color. (Supports 'transparent')</p>
+            <pre><code>http://curse.modmuss50.me/widget/233564<b>?buttonShadowColor=F00</b></code></pre>
+            <iframe src="/widget/233564?buttonShadowColor=F00" width="800" height="170" scrolling="no" seamless="seamless" style="border: none;"></iframe>
+            <hr></hr>
+
+            <h4>darkTheme</h4>
+            <p>This flag enables the dark theme. Various colors can still be overriden with the other flags, as this is checked before the others.</p>
+            <pre><code>http://curse.modmuss50.me/widget/233564<b>?darkTheme=true</b></code></pre>
+            <iframe src="/widget/233564?darkTheme=true" width="800" height="170" scrolling="no" seamless="seamless" style="border: none;"></iframe>
             <hr></hr>
         </div>
     </div>

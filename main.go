@@ -64,6 +64,27 @@ func index(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, ServerInfo{RequestsPerHour: strconv.FormatInt(RateCounter.Rate(), 10), ResponseTime: LastResponse})
 }
 
+func processColorFlag(flag string, r *http.Request, validExceptions ... string) (valid bool, color string) {
+	flagData := r.URL.Query().Get(flag)
+	if flagData != "" {
+		color, err := colors.Parse(flagData)
+		if err == nil {
+			return true, color.ToHEX().String()
+		} else {
+			color, err := colors.Parse("#" + flagData)
+			if err == nil {
+				return true, color.ToHEX().String()
+			}
+		}
+	}
+	for _, value := range validExceptions {
+		if value == flagData {
+			return true, flagData
+		}
+	}
+	return false, ""
+}
+
 func widgetResponse(w http.ResponseWriter, r *http.Request) {
 	startTime := time.Now()
 	RateCounter.Incr(1)
@@ -109,12 +130,9 @@ func widgetResponse(w http.ResponseWriter, r *http.Request) {
 	}
 
 	projectData.(*ProjectData).AccentColor = "#2c3e50"
-	accentColor := r.URL.Query().Get("accentColor")
-	if accentColor != "" {
-		color, err := colors.Parse(accentColor)
-		if err == nil {
-			projectData.(*ProjectData).AccentColor = color.ToHEX().String()
-		}
+	accentValid, accentColor := processColorFlag("accentColor", r)
+	if accentValid {
+		projectData.(*ProjectData).AccentColor = accentColor
 	} else {
 		url := projectData.(*ProjectData).Thumbnail
 
@@ -145,9 +163,44 @@ func widgetResponse(w http.ResponseWriter, r *http.Request) {
 
 	color, err := colors.Parse(projectData.(*ProjectData).AccentColor)
 	if color.IsLight() {
-		projectData.(*ProjectData).TextColor = "black"
+		projectData.(*ProjectData).ButtonTextColor = "black"
 	} else {
-		projectData.(*ProjectData).TextColor = "white"
+		projectData.(*ProjectData).ButtonTextColor = "white"
+	}
+
+	projectData.(*ProjectData).NormalTextColor = "black"
+	projectData.(*ProjectData).ShadowColor = "#888888"
+	projectData.(*ProjectData).BackgroundColor = "transparent"
+	darkTheme := r.URL.Query().Get("darkTheme")
+	if darkTheme != "" {
+		darkBool, err := strconv.ParseBool(darkTheme)
+		if err == nil {
+			if darkBool == true {
+				projectData.(*ProjectData).NormalTextColor = "white"
+				projectData.(*ProjectData).ShadowColor = "transparent"
+				projectData.(*ProjectData).BackgroundColor = "#1B1B1B"
+			}
+		}
+	}
+
+	overrideButtonTextValid, overrideButtonTextColor := processColorFlag("overrideButtonTextColor", r)
+	if overrideButtonTextValid {
+		projectData.(*ProjectData).ButtonTextColor = overrideButtonTextColor
+	}
+
+	normalTextValid, normalTextColor := processColorFlag("normalTextColor", r)
+	if normalTextValid {
+		projectData.(*ProjectData).NormalTextColor = normalTextColor
+	}
+
+	shadowValid, buttonShadowColor := processColorFlag("buttonShadowColor", r, "transparent")
+	if shadowValid {
+		projectData.(*ProjectData).ShadowColor = buttonShadowColor
+	}
+
+	backgroundValid, backgroundColor := processColorFlag("backgroundColor", r, "transparent")
+	if backgroundValid {
+		projectData.(*ProjectData).BackgroundColor = backgroundColor
 	}
 
 	tmpl.Execute(w, projectData)
@@ -180,7 +233,7 @@ func getProjectData(projectID string) (*ProjectData, error) {
 	addonData.LatestVersion = latestFile.GameVesion
 	addonData.LatestDownloadURL = "https://minecraft.curseforge.com/projects/" + projectID + "/files/" + strconv.Itoa(latestFile.ProjectFileID)
 	addonData.ProjectURL = "https://minecraft.curseforge.com/projects/" + projectID
-	fmt.Println(addonData.ProjectURL)
+	//fmt.Println(addonData.ProjectURL)
 
 	if err == nil && monthlyDownloads > 0 {
 		addonData.DownloadsPerSecond = monthlyDownloads / (30 * 24 * 60 * 60)
@@ -302,7 +355,10 @@ type ProjectData struct {
 	ProjectURL            string
 	AccentColor           string
 	AccentColorHalfAlpha  string
-	TextColor             string
+	ButtonTextColor       string
+	NormalTextColor       string
+	ShadowColor           string
+	BackgroundColor       string
 
 	Attachments []struct {
 		Description  interface{} `json:"Description"`
