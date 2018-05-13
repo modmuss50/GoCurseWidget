@@ -31,7 +31,6 @@ var (
 	LastResponse   string
 	WidgetTemplate string
 	DirectDownload bool
-	CustomFileId   string
 )
 
 const Port = "8888"
@@ -95,10 +94,6 @@ func widgetResponse(w http.ResponseWriter, r *http.Request) {
 	widgetTemplate := r.URL.Query().Get("widgetTemplate")
 	if widgetTemplate == "horizontal" || widgetTemplate == "vertical" || widgetTemplate == "compact" {
 		WidgetTemplate = widgetTemplate
-	}
-	customFileId := r.URL.Query().Get("customFileId")
-	if customFileId != "" {
-		CustomFileId = customFileId
 	}
 	tmpl, err := template.ParseFiles("www/" + WidgetTemplate + ".html")
 	if err != nil {
@@ -260,18 +255,14 @@ func getProjectData(projectID string) (*ProjectData, error) {
 	monthlyDownloads, err := getMonthlyDownloads(strconv.Itoa(addonData.ID), addonData.GameID)
 
 	latestFile := populateLatestVersion(addonData)
-	fileID := strconv.Itoa(latestFile.ProjectFileID)
+	fildID := strconv.Itoa(latestFile.ProjectFileID)
 	addonData.DownloadVersion = latestFile.GameVesion
-/*	if CustomFileId != "" {
-		fileID = CustomFileId
-	}*/
 	if DirectDownload {
-		addonData.DownloadURL = "https://minecraft.curseforge.com/projects/" + projectID + "/files/" + fileID
+		addonData.DownloadURL = "https://minecraft.curseforge.com/projects/" + projectID + "/files/" + fildID
 	} else {
-		addonData.DownloadURL = "https://minecraft.curseforge.com/projects/" + projectID + "/files/" + fileID + "/download"
+		addonData.DownloadURL = "https://minecraft.curseforge.com/projects/" + projectID + "/files/" + fildID + "/download"
 	}
 	addonData.ProjectURL = "https://minecraft.curseforge.com/projects/" + projectID
-	//fmt.Println(addonData.ProjectURL)
 
 	if err == nil && monthlyDownloads > 0 {
 		addonData.DownloadsPerSecond = monthlyDownloads / (30 * 24 * 60 * 60)
@@ -309,32 +300,6 @@ func populateLatestVersion(projectData *ProjectData) ProjectFile {
 		}
 	}
 	return latestFile
-}
-
-func getProjectFileForId(projectData *ProjectData, id int) ProjectFile {
-	var projectFile ProjectFile
-	for _, file := range projectData.GameVersionLatestFiles {
-		gameVersion, err := semver.Make(file.GameVesion)
-		if err != nil {
-			//This wont work for things such as snapshots or other things that have stupid versions
-			continue
-		}
-		//Checks to see if the game version set is valid, if not we assume its newer than the current version
-		if projectFile.GameVesion == "" {
-			projectFile = file
-			continue
-		}
-		latestFileGameVersion, err := semver.Make(projectFile.GameVesion)
-		if err != nil {
-			continue
-		}
-		if gameVersion.Compare(latestFileGameVersion) == 1 {
-			if isMostPromotedFile(projectData, file) {
-				projectFile = file
-			}
-		}
-	}
-	return projectFile
 }
 
 //Checks the file to see if it is the best file for the job, ie a beta file will return true when if no release file is present but an alpha is.
