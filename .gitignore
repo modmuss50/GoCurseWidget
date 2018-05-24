@@ -1,3 +1,4 @@
 /output/
 /.idea/
 *.log
+auth_config.json

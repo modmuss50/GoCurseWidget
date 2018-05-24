@@ -135,9 +135,9 @@
         <img src="{{.Thumbnail}}" alt="" style="width:150px;height:150px;"/>
     </div>
     <div class="column" style="max-width:630;margin:0px;margin-top:8px;margin-bottom:10px">
-        <p class="p-title" style="margin-right:0px;">{{.Name}}</p>
+        <p class="p-title" style="margin-right:0px;">{{.AddonInfo.Name}}</p>
         <cite id="downloads" class="p-downloads">{{.DownloadCountPretty}} downloads</cite>
-        <p class="textBlock" style="margin-right:0px;">{{.Summary}}</p>
+        <p class="textBlock" style="margin-right:0px;">{{.AddonInfo.Summary}}</p>
         <a href="{{.DownloadURL}}" target="_blank">
             <button id="dlbutton" class="button-raised" style="margin-right:-10px;">DOWNLOAD
                 FOR {{.DownloadVersion}}</button>

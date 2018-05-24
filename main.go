@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"io"
-	"image"
 	_ "image/jpeg"
 	_ "image/png"
 	"html/template"
@@ -21,6 +20,8 @@ import (
 	"os"
 	"github.com/blang/semver"
 	"gopkg.in/go-playground/colors.v1"
+	"github.com/modmuss50/CAV2"
+	"image"
 	"github.com/generaltso/vibrant"
 )
 
@@ -45,15 +46,18 @@ func main() {
 	//Stores the last response time
 	LastResponse = "0"
 
+	//Loads cav
+	cav2.SetupDefaultConfig()
+
 	//Sets up the logger
-	openLogFile("gocurse.log")
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+	//openLogFile("gocurse.log")
+	//log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
 	fmt.Println("Starting at http://localhost:" + Port)
 
 	http.HandleFunc("/", index)
 	http.HandleFunc("/widget/", widgetResponse)
-	http.ListenAndServe(":"+Port, logRequest(http.DefaultServeMux))
+	http.ListenAndServe(":"+Port, http.DefaultServeMux)
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
@@ -123,7 +127,7 @@ func widgetResponse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projectData, found := Cache.Get(projectID)
+	cacheData, found := Cache.Get(projectID)
 	if !found {
 		project, err := getProjectData(projectID)
 		if err != nil {
@@ -132,131 +136,115 @@ func widgetResponse(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		Cache.Set(projectID, project, cache.DefaultExpiration)
-		projectData = project
+		cacheData = project
 	}
 
-	projectData.(*ProjectData).SimulateDownloadCount = true
+	var projectData ProjectData
 
-	simulateDownloadCountParam := r.URL.Query().Get("simulateDownloadCount")
-	if simulateDownloadCountParam != "" {
-		simBool, err := strconv.ParseBool(simulateDownloadCountParam)
-		if err == nil {
-			projectData.(*ProjectData).SimulateDownloadCount = simBool
-		}
-	}
+	projectData = cacheData.(ProjectData)
+
+	//projectData.(ProjectData).SimulateDownloadCount = false
+
+	//simulateDownloadCountParam := r.URL.Query().Get("simulateDownloadCount")
+	//if simulateDownloadCountParam != "" {
+	//	simBool, err := strconv.ParseBool(simulateDownloadCountParam)
+	//	if err == nil {
+	//		projectData.(*ProjectData).SimulateDownloadCount = simBool
+	//	}
+	//}
 
 	DirectDownload = false
 	directDownload := r.URL.Query().Get("directDownload")
 	if directDownload != "" {
-		directDlBool, err := strconv.ParseBool(simulateDownloadCountParam)
+		directDlBool, err := strconv.ParseBool(directDownload)
 		if err == nil {
 			DirectDownload = directDlBool
 		}
 	}
 
-	projectData.(*ProjectData).AccentColor = "#2c3e50"
+	projectData.AccentColor = "#2c3e50"
 	accentValid, accentColor := processColorFlag("accentColor", r)
 	if accentValid {
-		projectData.(*ProjectData).AccentColor = accentColor
-	} else {
-		url := projectData.(*ProjectData).Thumbnail
-
-		resp, err := http.Get(url)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer resp.Body.Close()
-
-		checkErr := func(err error) {
-			if err != nil {
-				panic(err)
-			}
-		}
-
-		img, _, err := image.Decode(resp.Body)
-		checkErr(err)
-
-		palette, err := vibrant.NewPaletteFromImage(img)
-		checkErr(err)
-
-		vibrantColor := palette.ExtractAwesome()["Vibrant"]
-		if err == nil && vibrantColor != nil {
-			projectData.(*ProjectData).AccentColor = vibrantColor.Color.RGBHex()
-		}
+		projectData.AccentColor = accentColor
+	} else if projectData.ImageAccentColor != "" {
+		projectData.AccentColor = projectData.ImageAccentColor
 	}
-	projectData.(*ProjectData).AccentColorHalfAlpha = projectData.(*ProjectData).AccentColor + "80"
+	projectData.AccentColorHalfAlpha = projectData.AccentColor + "80"
 
-	color, err := colors.Parse(projectData.(*ProjectData).AccentColor)
+	color, err := colors.Parse(projectData.AccentColor)
 	if !color.IsDark() {
-		projectData.(*ProjectData).ButtonTextColor = "black"
+		projectData.ButtonTextColor = "black"
 	} else {
-		projectData.(*ProjectData).ButtonTextColor = "white"
+		projectData.ButtonTextColor = "white"
 	}
 
-	projectData.(*ProjectData).NormalTextColor = "black"
-	projectData.(*ProjectData).ShadowColor = "#888888"
-	projectData.(*ProjectData).BackgroundColor = "transparent"
+	projectData.NormalTextColor = "black"
+	projectData.ShadowColor = "#888888"
+	projectData.BackgroundColor = "transparent"
 	darkTheme := r.URL.Query().Get("darkTheme")
 	if darkTheme != "" {
 		darkBool, err := strconv.ParseBool(darkTheme)
 		if err == nil {
 			if darkBool == true {
-				projectData.(*ProjectData).NormalTextColor = "white"
-				projectData.(*ProjectData).ShadowColor = "transparent"
-				projectData.(*ProjectData).BackgroundColor = "#1B1B1B"
+				projectData.NormalTextColor = "white"
+				projectData.ShadowColor = "transparent"
+				projectData.BackgroundColor = "#1B1B1B"
 			}
 		}
 	}
 
 	overrideButtonTextValid, overrideButtonTextColor := processColorFlag("overrideButtonTextColor", r)
 	if overrideButtonTextValid {
-		projectData.(*ProjectData).ButtonTextColor = overrideButtonTextColor
+		projectData.ButtonTextColor = overrideButtonTextColor
 	}
 
 	normalTextValid, normalTextColor := processColorFlag("normalTextColor", r)
 	if normalTextValid {
-		projectData.(*ProjectData).NormalTextColor = normalTextColor
+		projectData.NormalTextColor = normalTextColor
 	}
 
 	shadowValid, buttonShadowColor := processColorFlag("buttonShadowColor", r, "transparent")
 	if shadowValid {
-		projectData.(*ProjectData).ShadowColor = buttonShadowColor
+		projectData.ShadowColor = buttonShadowColor
 	}
 
 	backgroundValid, backgroundColor := processColorFlag("backgroundColor", r, "transparent")
 	if backgroundValid {
-		projectData.(*ProjectData).BackgroundColor = backgroundColor
+		projectData.BackgroundColor = backgroundColor
 	}
 
 	tmpl.Execute(w, projectData)
 	LastResponse = time.Since(startTime).String()
 }
 
-func getProjectData(projectID string) (*ProjectData, error) {
-	addonBytes, err := goutils.Download("https://cursemeta.dries007.net/api/v2/direct/GetAddOn/" + projectID)
+func getProjectData(projectID string) (ProjectData, error) {
+
+	 addonData := ProjectData{}
+
+	addon, err := cav2.GetAddon(projectID)
 	if err != nil {
-		return nil, err
+		return addonData, err
 	}
-	var addonData *ProjectData
-	if err := json.Unmarshal(addonBytes, &addonData); err != nil {
-		return nil, err
+
+	if addon == nil {
+		return addonData, errors.New("failed to load curse addondata")
 	}
-	if addonData == nil {
-		return nil, errors.New("failed to load curse addondata")
-	}
+
+	addonData.AddonInfo = addon
+
 	//Populate the extra fields I added to make things easier for the template
-	for _, attachment := range addonData.Attachments {
+	for _, attachment := range addonData.AddonInfo.Attachments {
 		if attachment.IsDefault {
 			addonData.Thumbnail = attachment.URL
 		}
 	}
-	addonData.DownloadCountPretty = humanize.Comma(int64(addonData.DownloadCount))
+	addonData.DownloadCountPretty = humanize.Comma(int64(addonData.AddonInfo.DownloadCount))
 
-	monthlyDownloads, err := getMonthlyDownloads(strconv.Itoa(addonData.ID), addonData.GameID)
+	//monthlyDownloads, err := getMonthlyDownloads(strconv.Itoa(addonData.AddonInfo.ID), addonData.AddonInfo.GameID)
 
 	latestFile := populateLatestVersion(addonData)
 	fildID := strconv.Itoa(latestFile.ProjectFileID)
-	addonData.DownloadVersion = latestFile.GameVesion
+	addonData.DownloadVersion = latestFile.GameVersion
 	if DirectDownload {
 		addonData.DownloadURL = "https://minecraft.curseforge.com/projects/" + projectID + "/files/" + fildID
 	} else {
@@ -264,32 +252,58 @@ func getProjectData(projectID string) (*ProjectData, error) {
 	}
 	addonData.ProjectURL = "https://minecraft.curseforge.com/projects/" + projectID
 
-	if err == nil && monthlyDownloads > 0 {
-		addonData.DownloadsPerSecond = monthlyDownloads / (30 * 24 * 60 * 60)
-	} else {
+//	if err == nil && monthlyDownloads > 0 {
+//		addonData.DownloadsPerSecond = monthlyDownloads / (30 * 24 * 60 * 60)
+//	} else {
 		//No need to fail if this fails
-		log.Println("Failed to get download history for " + projectID)
-		log.Println(err)
+	//	log.Println("Failed to get download history for " + projectID)
+	//	log.Println(err)
 		addonData.DownloadsPerSecond = 0
+//	}
+
+
+	url := addonData.Thumbnail
+
+	resp, err := http.Get(url)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	checkErr := func(err error) {
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	img, _, err := image.Decode(resp.Body)
+	checkErr(err)
+
+	palette, err := vibrant.NewPaletteFromImage(img)
+	checkErr(err)
+
+	vibrantColor := palette.ExtractAwesome()["Vibrant"]
+	if err == nil && vibrantColor != nil {
+		addonData.ImageAccentColor = vibrantColor.Color.RGBHex()
 	}
 
 	return addonData, nil
 }
 
-func populateLatestVersion(projectData *ProjectData) ProjectFile {
-	var latestFile ProjectFile
-	for _, file := range projectData.GameVersionLatestFiles {
-		gameVersion, err := semver.Make(file.GameVesion)
+func populateLatestVersion(projectData ProjectData) cav2.Model_Addon_Game_Version_File {
+	var latestFile cav2.Model_Addon_Game_Version_File
+	for _, file := range projectData.AddonInfo.GameVersionLatestFiles {
+		gameVersion, err := semver.Make(file.GameVersion)
 		if err != nil {
 			//This wont work for things such as snapshots or other things that have stupid versions
 			continue
 		}
 		//Checks to see if the game version set is valid, if not we assume its newer than the current version
-		if latestFile.GameVesion == "" {
+		if latestFile.GameVersion == "" {
 			latestFile = file
 			continue
 		}
-		latestFileGameVersion, err := semver.Make(latestFile.GameVesion)
+		latestFileGameVersion, err := semver.Make(latestFile.GameVersion)
 		if err != nil {
 			continue
 		}
@@ -303,30 +317,17 @@ func populateLatestVersion(projectData *ProjectData) ProjectFile {
 }
 
 //Checks the file to see if it is the best file for the job, ie a beta file will return true when if no release file is present but an alpha is.
-func isMostPromotedFile(data *ProjectData, testFile ProjectFile) bool {
+func isMostPromotedFile(data ProjectData, testFile cav2.Model_Addon_Game_Version_File) bool {
 	isBest := true
-	for _, file := range data.GameVersionLatestFiles {
-		if file.GameVesion == testFile.GameVesion {
-			if getFilePriority(file.FileType) > getFilePriority(testFile.FileType) {
+	for _, file := range data.AddonInfo.GameVersionLatestFiles {
+		if file.GameVersion == testFile.GameVersion {
+			if file.FileType > testFile.FileType {
 				isBest = false
 				break
 			}
 		}
 	}
 	return isBest
-}
-
-func getFilePriority(promotion string) int {
-	if promotion == "Alpha" {
-		return 1
-	}
-	if promotion == "Beta" {
-		return 2
-	}
-	if promotion == "Release" {
-		return 3
-	}
-	return 0 //this should not get called unless something has gone very wrong
 }
 
 func getMonthlyDownloads(projectID string, gameID int) (float64, error) {
@@ -384,89 +385,11 @@ type ProjectData struct {
 	ProjectURL            string
 	AccentColor           string
 	AccentColorHalfAlpha  string
+	ImageAccentColor      string
 	ButtonTextColor       string
 	NormalTextColor       string
 	ShadowColor           string
 	BackgroundColor       string
 
-	Attachments []struct {
-		Description  interface{} `json:"Description"`
-		IsDefault    bool        `json:"IsDefault"`
-		ThumbnailURL string      `json:"ThumbnailUrl"`
-		Title        string      `json:"Title"`
-		URL          string      `json:"Url"`
-	} `json:"Attachments"`
-	Authors []struct {
-		Name string `json:"Name"`
-		URL  string `json:"Url"`
-	} `json:"Authors"`
-	AvatarURL interface{} `json:"AvatarUrl"`
-	Categories []struct {
-		ID   int    `json:"Id"`
-		Name string `json:"Name"`
-		URL  string `json:"URL"`
-	} `json:"Categories"`
-	CategorySection struct {
-		ExtraIncludePattern     interface{} `json:"ExtraIncludePattern"`
-		GameID                  int         `json:"GameID"`
-		ID                      int         `json:"ID"`
-		InitialInclusionPattern string      `json:"InitialInclusionPattern"`
-		Name                    string      `json:"Name"`
-		PackageType             string      `json:"PackageType"`
-		Path                    string      `json:"Path"`
-	} `json:"CategorySection"`
-	CommentCount           int           `json:"CommentCount"`
-	DefaultFileID          int           `json:"DefaultFileId"`
-	DonationURL            interface{}   `json:"DonationUrl"`
-	DownloadCount          float64       `json:"DownloadCount"`
-	ExternalURL            interface{}   `json:"ExternalUrl"`
-	GameID                 int           `json:"GameId"`
-	GamePopularityRank     int           `json:"GamePopularityRank"`
-	GameVersionLatestFiles []ProjectFile `json:"GameVersionLatestFiles"`
-	IconID                 int           `json:"IconId"`
-	ID                     int           `json:"Id"`
-	InstallCount           int           `json:"InstallCount"`
-	IsFeatured             int           `json:"IsFeatured"`
-	LatestFiles []struct {
-		AlternateFileID int `json:"AlternateFileId"`
-		Dependencies []struct {
-			AddOnID int    `json:"AddOnId"`
-			Type    string `json:"Type"`
-		} `json:"Dependencies"`
-		DownloadURL    string   `json:"DownloadURL"`
-		FileDate       string   `json:"FileDate"`
-		FileName       string   `json:"FileName"`
-		FileNameOnDisk string   `json:"FileNameOnDisk"`
-		FileStatus     string   `json:"FileStatus"`
-		GameVersion    []string `json:"GameVersion"`
-		ID             int      `json:"Id"`
-		IsAlternate    bool     `json:"IsAlternate"`
-		IsAvailable    bool     `json:"IsAvailable"`
-		Modules []struct {
-			Fingerprint int    `json:"Fingerprint"`
-			Foldername  string `json:"Foldername"`
-		} `json:"Modules"`
-		PackageFingerprint int    `json:"PackageFingerprint"`
-		ReleaseType        string `json:"ReleaseType"`
-	} `json:"LatestFiles"`
-	Likes                    int     `json:"Likes"`
-	Name                     string  `json:"Name"`
-	PackageType              string  `json:"PackageType"`
-	PopularityScore          float64 `json:"PopularityScore"`
-	PrimaryAuthorName        string  `json:"PrimaryAuthorName"`
-	PrimaryCategoryAvatarURL string  `json:"PrimaryCategoryAvatarUrl"`
-	PrimaryCategoryID        int     `json:"PrimaryCategoryId"`
-	PrimaryCategoryName      string  `json:"PrimaryCategoryName"`
-	Rating                   int     `json:"Rating"`
-	Stage                    string  `json:"Stage"`
-	Status                   string  `json:"Status"`
-	Summary                  string  `json:"Summary"`
-	WebSiteURL               string  `json:"WebSiteURL"`
-}
-
-type ProjectFile struct {
-	FileType        string `json:"FileType"`
-	GameVesion      string `json:"GameVesion"`
-	ProjectFileID   int    `json:"ProjectFileID"`
-	ProjectFileName string `json:"ProjectFileName"`
+	AddonInfo *cav2.Model_Addon_Response
 }

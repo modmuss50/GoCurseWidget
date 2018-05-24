@@ -105,7 +105,7 @@
 
 {{if .SimulateDownloadCount}}
     <script>
-        var downloads = {{.DownloadCount}};
+        var downloads = {{.AddonInfo.DownloadCount}};
         window.setInterval(
                 function () {
                     downloads = downloads + {{.DownloadsPerSecond}};
@@ -127,7 +127,7 @@
     </div>
     <div class="column"
          style="max-width:280;margin:0px;margin-top:8px;margin-bottom:10px;margin-right:10px;text-align: center;">
-        <p class="p-title" style="margin-right:0px;">{{.Name}}</p>
+        <p class="p-title" style="margin-right:0px;">{{.AddonInfo.Name}}</p>
         <cite id="downloads" class="p-downloads">{{.DownloadCountPretty}} downloads</cite>
         <br/>
         <div style="margin-top:4px">
