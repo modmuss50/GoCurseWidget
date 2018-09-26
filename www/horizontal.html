@@ -98,6 +98,14 @@
             font-size: 16px;
         }
 
+        .p-info {
+            margin-top: 0px;
+            color: {{.NormalTextColor}};
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 500;
+            font-size: 11px;
+        }
+
         .textBlock {
             font-family: 'Roboto', sans-serif;
             font-size: 16px;
@@ -134,9 +142,10 @@
     <div class="column" style="max-width:150px;max-height:150px;margin:10px">
         <img src="{{.Thumbnail}}" alt="" style="width:150px;height:150px;"/>
     </div>
-    <div class="column" style="max-width:630;margin:0px;margin-top:8px;margin-bottom:10px">
+    <div class="column" style="max-width:630px;margin:0px;margin-top:8px;margin-bottom:10px">
         <p class="p-title" style="margin-right:0px;">{{.AddonInfo.Name}}</p>
         <cite id="downloads" class="p-downloads">{{.DownloadCountPretty}} downloads</cite>
+        <cite id="info" class="p-info">Last updated: {{.LastUpdated}}</cite>
         <p class="textBlock" style="margin-right:0px;">{{.AddonInfo.Summary}}</p>
         <a href="{{.DownloadURL}}" target="_blank">
             <button id="dlbutton" class="button-raised" style="margin-right:-10px;">DOWNLOAD

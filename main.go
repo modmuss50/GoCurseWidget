@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ararog/timeago"
 	"github.com/blang/semver"
 	"github.com/dustin/go-humanize"
 	"github.com/generaltso/vibrant"
@@ -22,6 +23,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -243,14 +245,38 @@ func getProjectData(projectID string) (ProjectData, error) {
 	//monthlyDownloads, err := getMonthlyDownloads(strconv.Itoa(addonData.AddonInfo.ID), addonData.AddonInfo.GameID)
 
 	latestFile := populateLatestVersion(addonData)
-	fildID := strconv.Itoa(latestFile.ProjectFileID)
+
+	fileID := strconv.Itoa(latestFile.ProjectFileID)
 	addonData.DownloadVersion = latestFile.GameVersion
 	if DirectDownload {
-		addonData.DownloadURL = "https://minecraft.curseforge.com/projects/" + projectID + "/files/" + fildID
+		addonData.DownloadURL = "https://minecraft.curseforge.com/projects/" + projectID + "/files/" + fileID
 	} else {
-		addonData.DownloadURL = "https://minecraft.curseforge.com/projects/" + projectID + "/files/" + fildID + "/download"
+		addonData.DownloadURL = "https://minecraft.curseforge.com/projects/" + projectID + "/files/" + fileID + "/download"
 	}
 	addonData.ProjectURL = "https://minecraft.curseforge.com/projects/" + projectID
+
+	newestTime := time.Unix(0, 0)
+
+	for _, file := range addonData.AddonInfo.LatestFiles {
+		fmt.Println(file.FileDate)
+		date := file.FileDate[:strings.LastIndex(file.FileDate, ".")]
+		fmt.Println(date)
+		time, err := time.Parse("2006-01-02T15:04:05", date)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		if time.UnixNano() > newestTime.UnixNano() {
+			newestTime = time
+		}
+	}
+
+	timeAgo, err := timeago.TimeAgoFromNowWithTime(newestTime)
+	if err != nil && newestTime.Unix() != 0 {
+		addonData.LastUpdated = "unknown"
+	} else {
+		addonData.LastUpdated = timeAgo
+	}
 
 	//	if err == nil && monthlyDownloads > 0 {
 	//		addonData.DownloadsPerSecond = monthlyDownloads / (30 * 24 * 60 * 60)
@@ -389,6 +415,7 @@ type ProjectData struct {
 	NormalTextColor       string
 	ShadowColor           string
 	BackgroundColor       string
+	LastUpdated           string
 
 	AddonInfo *cav2.Addon
 }
