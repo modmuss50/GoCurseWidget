@@ -1,28 +1,28 @@
 package main
 
 import (
-	"github.com/modmuss50/goutils"
 	"encoding/json"
-	"net/http"
-	"io"
+	"errors"
+	"fmt"
+	"github.com/blang/semver"
+	"github.com/dustin/go-humanize"
+	"github.com/generaltso/vibrant"
+	"github.com/modmuss50/CAV2"
+	"github.com/modmuss50/goutils"
+	"github.com/patrickmn/go-cache"
+	"github.com/paulbellamy/ratecounter"
+	"gopkg.in/go-playground/colors.v1"
+	"html/template"
+	"image"
 	_ "image/jpeg"
 	_ "image/png"
-	"html/template"
-	"github.com/dustin/go-humanize"
-	"regexp"
-	"github.com/patrickmn/go-cache"
-	"time"
-	"fmt"
-	"errors"
-	"strconv"
-	"github.com/paulbellamy/ratecounter"
+	"io"
 	"log"
+	"net/http"
 	"os"
-	"github.com/blang/semver"
-	"gopkg.in/go-playground/colors.v1"
-	"github.com/modmuss50/CAV2"
-	"image"
-	"github.com/generaltso/vibrant"
+	"regexp"
+	"strconv"
+	"time"
 )
 
 var (
@@ -70,7 +70,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, ServerInfo{RequestsPerHour: strconv.FormatInt(RateCounter.Rate(), 10), ResponseTime: LastResponse})
 }
 
-func processColorFlag(flag string, r *http.Request, validExceptions ... string) (valid bool, color string) {
+func processColorFlag(flag string, r *http.Request, validExceptions ...string) (valid bool, color string) {
 	flagData := r.URL.Query().Get(flag)
 	if flagData != "" {
 		color, err := colors.Parse(flagData)
@@ -219,7 +219,7 @@ func widgetResponse(w http.ResponseWriter, r *http.Request) {
 
 func getProjectData(projectID string) (ProjectData, error) {
 
-	 addonData := ProjectData{}
+	addonData := ProjectData{}
 
 	addon, err := cav2.GetAddon(projectID)
 	if err != nil {
@@ -252,15 +252,14 @@ func getProjectData(projectID string) (ProjectData, error) {
 	}
 	addonData.ProjectURL = "https://minecraft.curseforge.com/projects/" + projectID
 
-//	if err == nil && monthlyDownloads > 0 {
-//		addonData.DownloadsPerSecond = monthlyDownloads / (30 * 24 * 60 * 60)
-//	} else {
-		//No need to fail if this fails
+	//	if err == nil && monthlyDownloads > 0 {
+	//		addonData.DownloadsPerSecond = monthlyDownloads / (30 * 24 * 60 * 60)
+	//	} else {
+	//No need to fail if this fails
 	//	log.Println("Failed to get download history for " + projectID)
 	//	log.Println(err)
-		addonData.DownloadsPerSecond = 0
-//	}
-
+	addonData.DownloadsPerSecond = 0
+	//	}
 
 	url := addonData.Thumbnail
 
@@ -290,8 +289,8 @@ func getProjectData(projectID string) (ProjectData, error) {
 	return addonData, nil
 }
 
-func populateLatestVersion(projectData ProjectData) cav2.Model_Addon_Game_Version_File {
-	var latestFile cav2.Model_Addon_Game_Version_File
+func populateLatestVersion(projectData ProjectData) cav2.AddonGameVersion {
+	var latestFile cav2.AddonGameVersion
 	for _, file := range projectData.AddonInfo.GameVersionLatestFiles {
 		gameVersion, err := semver.Make(file.GameVersion)
 		if err != nil {
@@ -317,11 +316,11 @@ func populateLatestVersion(projectData ProjectData) cav2.Model_Addon_Game_Versio
 }
 
 //Checks the file to see if it is the best file for the job, ie a beta file will return true when if no release file is present but an alpha is.
-func isMostPromotedFile(data ProjectData, testFile cav2.Model_Addon_Game_Version_File) bool {
+func isMostPromotedFile(data ProjectData, testFile cav2.AddonGameVersion) bool {
 	isBest := true
 	for _, file := range data.AddonInfo.GameVersionLatestFiles {
 		if file.GameVersion == testFile.GameVersion {
-			if file.FileType > testFile.FileType {
+			if file.FileType < testFile.FileType {
 				isBest = false
 				break
 			}
@@ -391,5 +390,5 @@ type ProjectData struct {
 	ShadowColor           string
 	BackgroundColor       string
 
-	AddonInfo *cav2.Model_Addon_Response
+	AddonInfo *cav2.Addon
 }
