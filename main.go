@@ -258,7 +258,6 @@ func getProjectData(projectID string) (ProjectData, error) {
 	newestTime := time.Unix(0, 0)
 
 	for _, file := range addonData.AddonInfo.LatestFiles {
-		fmt.Println(file.FileDate)
 		date := file.FileDate[:strings.LastIndex(file.FileDate, ".")]
 		time, err := time.Parse("2006-01-02T15:04:05", date)
 		if err != nil {

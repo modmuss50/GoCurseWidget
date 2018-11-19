@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+echo 'Updating libs'
+go get -u github.com/modmuss50/GoCurseWidget
+
 rm -rf output
 mkdir output
 
